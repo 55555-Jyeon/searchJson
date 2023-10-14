@@ -24,8 +24,11 @@ const HomePage = () => {
   // filter keywords which includes(contains) inputValue
   const showDropDownList = () => {
     if (inputValue) {
-      const relatedKeywordsList = data.map((keyword) => {
-        return keyword;
+      const resultsArrayList = data.filter((wordsList) => {
+        return wordsList.includes(inputValue);
+      });
+      const relatedKeywordsList = resultsArrayList.map((keywords) => {
+        return keywords;
       });
       setDropDownList(relatedKeywordsList);
     } else {
@@ -82,7 +85,7 @@ const HomePage = () => {
       {hasInputValue && (
         <DropDownWrapper>
           {dropDownList.length === 0 && (
-            <ShowMessage>해당 단어와 관련 있는 영화가 없습니다.</ShowMessage>
+            <ShowMessage>해당 단어를 포함한 검색어가 없습니다.</ShowMessage>
           )}
           {dropDownList.map((word, wordIndex) => {
             return (
