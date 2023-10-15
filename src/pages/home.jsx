@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getKeywords } from "../api/search.api";
 import styled from "styled-components";
 
@@ -11,6 +11,7 @@ const HomePage = () => {
 
   const [dropDownList, setDropDownList] = useState();
   const [dropDownIndex, setDropDownIndex] = useState(-1);
+  const dropdownRef = useRef();
 
   useEffect(() => {
     (async () => {
@@ -27,10 +28,7 @@ const HomePage = () => {
       const keywordsIncluded = data.filter((wordsList) => {
         return wordsList.includes(inputValue);
       });
-      const resultsList = keywordsIncluded.map((keywords) => {
-        return keywords;
-      });
-      setDropDownList(resultsList);
+      setDropDownList(keywordsIncluded);
     } else {
       setHasInputValue(false);
       setDropDownList([]);
@@ -52,16 +50,26 @@ const HomePage = () => {
 
   // 키보드 조작 관련 로직 : keyUp, keyDown, Enter
   // dropdown의 요소를 선택하기 위해 키보드에 버튼을 눌릴 때마다, 아래의 조건에 따라 dropDown=Index 값 업데이트
-  const handleDropDownKey = (e) => {
+  const handleKeyArrow = (e) => {
     e.preventDefault();
     if (hasInputValue) {
-      if (e.key === "ArrowDown" && dropDownList.length - 1 > dropDownIndex) {
-        setDropDownIndex(dropDownIndex + 1);
-      } else if (e.key === "ArrowUp" && dropDownIndex >= 0)
-        setDropDownIndex(dropDownIndex - 1);
-      else if (e.key === "Enter" && dropDownIndex >= 0) {
-        clickedDropDownItem(dropDownList[dropDownIndex]);
-        setDropDownIndex(-1);
+      switch (e.key) {
+        case e.key === "ArrowDown":
+          setDropDownIndex(dropDownIndex + 1);
+          if (dropdownRef.current?.dropDownList.length === dropDownIndex + 1)
+            setDropDownIndex(0);
+          break;
+        case e.key === "ArrowUp":
+          setDropDownIndex(dropDownIndex - 1);
+          if (dropDownIndex >= 0) {
+            setDropDownList([]);
+            setDropDownIndex(-1);
+          }
+          break;
+        case e.key === "Enter":
+          clickedDropDownItem(dropDownList[dropDownIndex]);
+          setDropDownIndex(-1);
+          break;
       }
     }
   };
@@ -75,13 +83,13 @@ const HomePage = () => {
         <Input
           value={inputValue}
           onChange={checkInputValue}
-          onKeyUp={handleDropDownKey}
+          onKeyDown={handleKeyArrow}
           placeholder="search keyword"
         />
         <DeleteButton onClick={() => setInputValue("")}>&times;</DeleteButton>
       </SearchBox>
       {hasInputValue && (
-        <DropDownWrapper>
+        <DropDownWrapper ref={dropdownRef}>
           {dropDownList.length === 0 && (
             <ShowMessage>해당 단어를 포함한 검색어가 없습니다.</ShowMessage>
           )}
@@ -91,9 +99,9 @@ const HomePage = () => {
                 key={wordIndex}
                 onClick={() => clickedDropDownItem(word)}
                 onMouseOver={() => {
-                  setDropDownKeywordIndex(wordIndex);
+                  setDropDownIndex(wordIndex);
                 }}
-                className={dropDownKeywordIndex === wordIndex ? "selected" : ""}
+                className={dropDownIndex === wordIndex ? "selected" : ""}
               >
                 {word}
               </RelatedKeyword>
@@ -170,15 +178,12 @@ const DropDownWrapper = styled.ul`
   top: 30%;
   left: 50%;
   transform: translateX(-50%);
-  width: 47%;
+  width: 45%;
   height: fit-content;
-  min-height: 7%;
+  min-height: 10%;
   max-height: 40%;
   overflow-y: scroll;
-  padding: 3% 1% 0;
-  width: 45%;
-  height: 15%;
-  padding: 0 2%;
+  padding: 3% 2% 0;
   background-color: #fff;
   border-radius: 20px;
   /* hide scroll */
@@ -207,7 +212,8 @@ const RelatedKeyword = styled.li`
   cursor: pointer;
 
   &:hover,
-  &:focus {
+  &:focus,
+  .selected {
     background-color: #eee;
   }
 `;
