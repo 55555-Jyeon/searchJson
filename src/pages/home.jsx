@@ -10,7 +10,7 @@ const HomePage = () => {
   const [hasInputValue, setHasInputValue] = useState(false);
 
   const [dropDownList, setDropDownList] = useState();
-  const [dropDownKeywordIndex, setDropDownKeywordIndex] = useState(-1);
+  const [dropDownIndex, setDropDownIndex] = useState(-1);
 
   useEffect(() => {
     (async () => {
@@ -24,13 +24,13 @@ const HomePage = () => {
   // filter keywords which includes(contains) inputValue
   const showDropDownList = () => {
     if (inputValue) {
-      const resultsArrayList = data.filter((wordsList) => {
+      const keywordsIncluded = data.filter((wordsList) => {
         return wordsList.includes(inputValue);
       });
-      const relatedKeywordsList = resultsArrayList.map((keywords) => {
+      const resultsList = keywordsIncluded.map((keywords) => {
         return keywords;
       });
-      setDropDownList(relatedKeywordsList);
+      setDropDownList(resultsList);
     } else {
       setHasInputValue(false);
       setDropDownList([]);
@@ -40,6 +40,7 @@ const HomePage = () => {
   const checkInputValue = (e) => {
     e.preventDefault();
     setInputValue(e.target.value);
+    setKeywords(e.target.value);
     setHasInputValue(true);
   };
 
@@ -50,25 +51,22 @@ const HomePage = () => {
   };
 
   // 키보드 조작 관련 로직 : keyUp, keyDown, Enter
-  // dropdown의 요소를 선택하기 위해 키보드에 버튼을 눌릴 때마다, 아래의 조건에 따라 dropDownKeywordIndex 값 업데이트
+  // dropdown의 요소를 선택하기 위해 키보드에 버튼을 눌릴 때마다, 아래의 조건에 따라 dropDown=Index 값 업데이트
   const handleDropDownKey = (e) => {
     e.preventDefault();
     if (hasInputValue) {
-      if (
-        e.key === "ArrowDown" &&
-        dropDownList.length - 1 > dropDownKeywordIndex
-      ) {
-        setDropDownKeywordIndex(dropDownKeywordIndex + 1);
-      } else if (e.key === "ArrowUp" && dropDownKeywordIndex >= 0)
-        setDropDownKeywordIndex(dropDownKeywordIndex - 1);
-      else if (e.key === "Enter" && dropDownKeywordIndex >= 0) {
-        clickedDropDownItem(dropDownList[dropDownKeywordIndex]);
-        setDropDownKeywordIndex(-1);
+      if (e.key === "ArrowDown" && dropDownList.length - 1 > dropDownIndex) {
+        setDropDownIndex(dropDownIndex + 1);
+      } else if (e.key === "ArrowUp" && dropDownIndex >= 0)
+        setDropDownIndex(dropDownIndex - 1);
+      else if (e.key === "Enter" && dropDownIndex >= 0) {
+        clickedDropDownItem(dropDownList[dropDownIndex]);
+        setDropDownIndex(-1);
       }
     }
   };
 
-  useEffect(showDropDownList, [inputValue]);
+  useEffect(showDropDownList, [inputValue, data]);
 
   return (
     <Wrapper>
@@ -174,10 +172,31 @@ const DropDownWrapper = styled.ul`
   transform: translateX(-50%);
   width: 47%;
   height: fit-content;
-  min-height: 15%;
+  min-height: 7%;
+  max-height: 40%;
+  overflow-y: scroll;
   padding: 3% 1% 0;
+  width: 45%;
+  height: 15%;
+  padding: 0 2%;
   background-color: #fff;
   border-radius: 20px;
+  /* hide scroll */
+  -ms-overflow-style: none; // IE and Edge
+  scrollbar-width: none; // Firefox
+  &::-webkit-scrollbar {
+    display: none; // Chrome, Safari, Opera
+  }
+`;
+
+const ShowMessage = styled.li`
+  list-style: none;
+  margin-bottom: 1rem;
+  padding: 1rem 2%;
+  text-align: center;
+  color: #666;
+  border-radius: 4px;
+  cursor: pointer;
 `;
 
 const RelatedKeyword = styled.li`
@@ -193,6 +212,4 @@ const RelatedKeyword = styled.li`
   }
 `;
 
-const LatestSearched = styled.li``;
-
-const ShowMessage = styled.li``;
+// const LatestSearched = styled.li``;
