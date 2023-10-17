@@ -7,9 +7,11 @@ const HomePage = () => {
   const [keywords, setKeywords] = useState("노트");
 
   const [inputValue, setInputValue] = useState("");
-  const [hasInputValue, setHasInputValue] = useState(false);
 
-  const [dropDownList, setDropDownList] = useState();
+  const [searchHistory, setSearchHistory] = useState([]);
+  const searchHistoryRef = useRef();
+
+  const [dropDownList, setDropDownList] = useState([]);
   const [dropDownIndex, setDropDownIndex] = useState(-1);
   const dropdownRef = useRef();
 
@@ -21,6 +23,25 @@ const HomePage = () => {
     })();
   }, [keywords]);
 
+  // Check whether inputValue is focused or not
+  const checkInputValue = (e) => {
+    e.preventDefault();
+    setInputValue(e.target.value);
+    setKeywords(e.currentTarget.value);
+  };
+
+  // show search history ⏱️ ⏰
+  // input:focus && !inputValue
+  const onSearchKeyword = () => {
+    console.log("방금 검색하신 단어:", keywords);
+    if (searchHistory.length < 6) {
+      searchHistory.pop();
+      setSearchHistory([keywords, ...searchHistory]);
+    } else {
+      setSearchHistory([keywords, ...searchHistory]);
+    }
+  };
+
   // show related keywords
   // filter keywords which includes(contains) inputValue
   const showDropDownList = () => {
@@ -30,29 +51,18 @@ const HomePage = () => {
       });
       setDropDownList(keywordsIncluded);
     } else {
-      setHasInputValue(false);
+      setInputValue("");
       setDropDownList([]);
     }
   };
 
-  const checkInputValue = (e) => {
-    e.preventDefault();
-    setInputValue(e.target.value);
-    setKeywords(e.target.value);
-    setHasInputValue(true);
-  };
-
   // dropdown에서 특정 keyword 클릭 시 발생할 이벤트
-  const clickedDropDownItem = (clickedItem) => {
-    setInputValue(clickedItem);
-    setHasInputValue(false);
-  };
+  const clickedDropDownItem = (clickedItem) => setInputValue(clickedItem);
 
   // 키보드 조작 관련 로직 : keyUp, keyDown, Enter
   // dropdown의 요소를 선택하기 위해 키보드에 버튼을 눌릴 때마다, 아래의 조건에 따라 dropDown=Index 값 업데이트
   const handleKeyArrow = (e) => {
-    e.preventDefault();
-    if (hasInputValue) {
+    if (!!inputValue) {
       switch (e.key) {
         case e.key === "ArrowDown":
           setDropDownIndex(dropDownIndex + 1);
@@ -75,6 +85,7 @@ const HomePage = () => {
   };
 
   useEffect(showDropDownList, [inputValue, data]);
+  // console.log("방금 검색하신 단어:", keywords)
 
   return (
     <Wrapper>
@@ -85,10 +96,14 @@ const HomePage = () => {
           onChange={checkInputValue}
           onKeyDown={handleKeyArrow}
           placeholder="search keyword"
+          ref={searchHistoryRef}
         />
         <DeleteButton onClick={() => setInputValue("")}>&times;</DeleteButton>
+        <SearchButton onClick={() => onSearchKeyword(keywords)}>
+          search
+        </SearchButton>
       </SearchBox>
-      {hasInputValue && (
+      {inputValue.length >= 1 && (
         <DropDownWrapper ref={dropdownRef}>
           {dropDownList.length === 0 && (
             <ShowMessage>해당 단어를 포함한 검색어가 없습니다.</ShowMessage>
@@ -105,6 +120,23 @@ const HomePage = () => {
               >
                 {word}
               </RelatedKeyword>
+            );
+          })}
+        </DropDownWrapper>
+      )}
+      {inputValue === 0 && (
+        <DropDownWrapper ref={dropdownRef}>
+          {dropDownList.length === 0 && (
+            <ShowMessage>해당 단어를 포함한 검색어가 없습니다.</ShowMessage>
+          )}
+          {dropDownList.map((word, wordIndex) => {
+            return (
+              <SearchHistory ref={searchHistoryRef}>
+                <li>최근검색어</li>
+                {searchHistory.map((historyIndex, searchHistory) => (
+                  <li key={historyIndex}>{searchHistory}</li>
+                ))}
+              </SearchHistory>
             );
           })}
         </DropDownWrapper>
@@ -173,6 +205,22 @@ const DeleteButton = styled.button`
   }
 `;
 
+const SearchButton = styled.button`
+  position: absolute;
+  top: 31.25%;
+  right: 20%;
+  border: none;
+  border-radius: 2px;
+  background-color: aliceblue;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &:hover {
+    background-color: #e9e9e9;
+  }
+`;
+
 const DropDownWrapper = styled.ul`
   position: absolute;
   top: 30%;
@@ -218,4 +266,16 @@ const RelatedKeyword = styled.li`
   }
 `;
 
-// const LatestSearched = styled.li``;
+const SearchHistory = styled.li`
+  list-style: none;
+  margin-bottom: 1rem;
+  padding: 1rem 2%;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover,
+  &:focus,
+  .selected {
+    background-color: #eee;
+  }
+`;
